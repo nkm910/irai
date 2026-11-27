@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="訪問依頼">
+<meta name="theme-color" content="#ffffff">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>訪問診療依頼</title>
+<style>
+/* VOICE: 診療所の正式な依頼書式。落ち着いて、迷わせない。
+   IDEA: 紹介状の用紙そのもの — 罫線入りの一枚の書式に書き込む感覚。
+   PICTURE: 入力フォーム自体が主役。一列で静かに流れる。
+   COLOUR and TYPE: 白い用紙、墨色の文字、印影の朱を一点。見出しは Noto Serif JP、本文 Noto Sans JP。
+   LAYOUT: 上部に条件の要約、下に章ごとの入力欄、下端に固定の出力バー。 */
+:root{color-scheme:light dark;
+--bg:light-dark(#eceae4,#15171a);--paper:light-dark(#ffffff,#1f2226);--ink:light-dark(#1d1f22,#e9e7e2);
+--mute:light-dark(#5d6168,#a4a8ae);--line:light-dark(#d6d3cb,#3a3e44);--red:light-dark(#b0281f,#ef7d72);
+--redbg:light-dark(#fbefed,#3a2422);--field:light-dark(#fbfaf7,#181a1d)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;background:var(--bg);color:var(--ink);font:16px/1.65 "Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;overflow-x:clip}
+.sheet{max-width:860px;margin:clamp(0px,3vw,32px) auto 120px;background:var(--paper);border:1px solid var(--line);box-shadow:0 1px 0 var(--line),0 18px 40px -28px rgba(0,0,0,.35)}
+header{padding:clamp(24px,4vw,44px) clamp(18px,4vw,48px) 20px;border-bottom:3px double var(--line);position:relative}
+h1{font:600 clamp(26px,4.4vw,38px)/1.15 "Hiragino Mincho ProN","Noto Serif JP",serif;margin:0 0 6px;text-wrap:balance;letter-spacing:.04em}
+.to{color:var(--mute);margin:0}
+.seal{position:absolute;right:clamp(16px,4vw,44px);top:clamp(20px,4vw,40px);width:64px;height:64px;border:2px solid var(--red);border-radius:50%;color:var(--red);display:grid;place-items:center;font:600 13px/1.2 "Hiragino Mincho ProN","Noto Serif JP",serif;text-align:center;transform:rotate(-8deg);opacity:.85}
+@media(max-width:600px){.seal{display:none}}
+.rules{margin:18px 0 0;padding:14px 16px;background:var(--field);border-left:3px solid var(--red);font-size:14.5px}
+.rules ul{margin:6px 0 0;padding-left:1.2em}.rules li{margin:2px 0}
+nav.scroll{overflow-x:auto;scrollbar-width:none;display:flex;gap:6px;padding:10px clamp(18px,4vw,48px);border-bottom:1px solid var(--line);white-space:nowrap;background:var(--paper)}
+@media(min-width:900px){nav.scroll{position:sticky;top:0;z-index:3}}
+nav a{flex:none;color:var(--ink);text-decoration:none;font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:999px}
+nav a:hover,nav a:focus-visible{border-color:var(--red);color:var(--red);outline:none}
+section{padding:22px clamp(18px,4vw,48px) 8px;border-bottom:1px solid var(--line)}
+h2{font:600 20px/1.3 "Hiragino Mincho ProN","Noto Serif JP",serif;margin:0 0 4px;display:flex;align-items:baseline;gap:10px}
+h2 small{font:400 13px "Hiragino Sans","Noto Sans JP",sans-serif;color:var(--mute)}
+.desc{color:var(--mute);font-size:14px;margin:0 0 12px}
+.row{display:grid;grid-template-columns:minmax(0,11em) minmax(0,1fr);gap:6px 18px;padding:10px 0;border-top:1px dashed var(--line)}
+.row:first-of-type{border-top:0}
+.row>label,.row>.lab{font-weight:500;font-size:15px;padding-top:9px}
+.req::after{content:"必須";margin-left:6px;font-size:11px;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:0 4px;white-space:nowrap;vertical-align:2px}
+@media(max-width:600px){.row{grid-template-columns:minmax(0,1fr)}.row>label,.row>.lab{padding-top:0}}
+input[type=text],input[type=date],input[type=tel],select,textarea{width:100%;font:16px/1.5 inherit;font-family:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:9px 11px;min-height:44px}
+textarea{resize:vertical}
+textarea:disabled{opacity:.5;cursor:not-allowed}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--red);outline-offset:1px;border-color:transparent}
+.hint{font-size:13px;color:var(--mute);margin-top:4px}
+.hint.ng{color:var(--red);font-size:14px;margin-top:8px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opts label{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--field);cursor:pointer;font-size:15px}
+.opts label:has(input:checked){border-color:var(--red);background:var(--redbg)}
+.opts input{accent-color:var(--red);width:18px;height:18px;margin:0}
+.warn{display:none;margin-top:8px;padding:8px 12px;background:var(--redbg);color:var(--red);border-radius:6px;font-size:14px}
+.warn.on{display:block}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--paper);border-top:1px solid var(--line);padding:10px max(4vw,14px) calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.meter{margin-right:auto;font-size:14px;color:var(--mute);display:flex;align-items:center;gap:10px}
+.meter i{display:block;width:120px;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.meter b{display:block;height:100%;background:var(--red);width:0;transition:width .3s}
+@media(prefers-reduced-motion:reduce){.meter b{transition:none}}
+button{font:500 15px/1 inherit;font-family:inherit;min-height:44px;padding:0 18px;border-radius:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+button.main{background:var(--red);border-color:var(--red);color:#fff}
+button:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.seg{display:inline-flex;margin:14px 0 0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;min-height:40px;font-size:14px;padding:0 14px}
+.seg button[aria-pressed=true]{background:var(--red);color:#fff}
+@media(max-width:600px){.sheet{border:0;margin-bottom:150px}.bar{gap:8px}.meter{width:100%;margin:0}.bar button{flex:1 1 0;min-width:0;white-space:nowrap;padding:0 6px;font-size:14px}.bar button.main{flex:1.4 1 0}}
+.toast{position:fixed;left:50%;bottom:calc(120px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:6px;font-size:14px;display:none;z-index:6;max-width:90vw}
+.toast.on{display:block}
+footer{padding:18px clamp(18px,4vw,48px) 26px;font-size:13.5px;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="sheet">
+<header>
+  <h1>訪問診療依頼に関する情報提供書</h1>
+  <p class="to">小嶋診療所　小嶋 志之 医師宛て</p>
+  <div class="seg" role="group" aria-label="様式の切り替え"><button type="button" data-m="full">通常版</button><button type="button" data-m="ini">イニシャル版</button></div>
+  <div class="seal">小嶋<br>診療所</div>
+  <div class="rules"><b>ご依頼の前にご確認ください</b>
+    <ul>
+      <li>当院かかりつけ以外の患者様は、主治医の先生または医療連携室からの直接のご依頼に限ります。</li>
+      <li>訪問範囲：的形・大塩・八家・木場・白浜・東山・明田（姫路市）、曽根・北浜（高砂市）。外来中でも15分以内に往診できる範囲です。</li>
+      <li>同時期の訪問診療は15名までが上限です。</li>
+      <li>人工呼吸管理、腹水・胸水ドレナージ、輸血、持続皮下注射などは当院では対応できません。</li>
+    </ul>
+  </div>
+</header>
+<nav class="scroll" id="nav"></nav>
+<form id="f" autocomplete="off"></form>
+<footer>
+  情報提供をいただいた上で訪問診療が可能と判断した場合も、まずご本人またはご家族に受診いただき、訪問診療の方針・体制・費用負担についてご了解いただいてから開始します（ご本人入院中のご家族受診は保険適用外の自費相談となります）。<br>
+  小嶋診療所　〒671-0111 兵庫県姫路市的形町1250　TEL 079-254-0718　FAX 079-254-0719
+</footer>
+</div>
+<div class="bar">
+  <div class="meter"><i><b id="mb"></b></i><span id="mt">必須 0/0</span></div>
+  <button type="button" id="clr">クリア</button>
+  <button type="button" id="cp">コピー</button>
+  <button type="button" class="main" id="dl">Word出力</button>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+{
+const AREAS=['的形（姫路市）','大塩（姫路市）','八家（姫路市）','木場（姫路市）','白浜（姫路市）','東山（姫路市）','明田（姫路市）','曽根（高砂市）','北浜（高砂市）','上記以外'];
+const NG=['人工呼吸管理','腹水・胸水ドレナージ','輸血','持続皮下注射'];
+let MODE='full';try{MODE=localStorage.getItem('kojima-houmon-mode')==='ini'?'ini':'full'}catch(e){}
+const PT_FULL={id:'pt',t:'患者情報',f:[
+  {k:'name',l:'氏名',r:1},{k:'kana',l:'ふりがな'},
+  {k:'sex',l:'性別',ty:'radio',o:['男','女']},
+  {k:'dob',l:'生年月日',ty:'date',r:1},
+  {k:'age',l:'年齢',h:'生年月日から自動計算します（修正可）'},
+  {k:'addr',l:'住所',r:1},
+  {k:'area',l:'お住まいの地区',ty:'select',o:AREAS,r:1},
+  {k:'ptel',l:'電話番号',ty:'tel'},
+  {k:'place',l:'現在の療養場所',ty:'radio',o:['自宅','入院中','施設']}]};
+const PT_INI={id:'pt',t:'患者情報',d:'個人が特定されないよう、氏名はイニシャルでご記入ください',f:[
+  {k:'name',l:'氏名（イニシャル）',r:1,ph:'例：Y.K.'},
+  {k:'sex',l:'性別',ty:'radio',o:['男','女'],r:1},
+  {k:'age',l:'年齢',r:1,ph:'例：85歳'},
+  {k:'area',l:'お住まいの地区',ty:'radio',o:AREAS,r:1},
+  {k:'place',l:'現在の療養場所',ty:'radio',o:['自宅','入院中','施設']}]};
+const S=[
+ {id:'src',t:'依頼元',d:'情報提供いただく医療機関・ご担当者',f:[
+  {k:'date',l:'依頼日',ty:'date',r:1},
+  {k:'inst',l:'医療機関名',r:1},
+  {k:'dept',l:'診療科・部署',ph:'例：内科／地域医療連携室'},
+  {k:'doc',l:'主治医',r:1},
+  {k:'staff',l:'連絡担当者',ph:'医療連携室の担当者など'},
+  {k:'tel',l:'電話番号',ty:'tel',r:1},{k:'fax',l:'FAX番号',ty:'tel'}]},
+ MODE==='ini'?PT_INI:PT_FULL,
+ {id:'med',t:'診療情報',d:'診療情報提供書を別途添付いただく場合は「別紙参照」とご記入ください',f:[
+  {k:'dx',l:'病名',ty:'ta',rw:2,r:1},
+  {k:'hx',l:'既往症',ty:'ta',rw:2},
+  {k:'coursealt',l:'経過の記載',ty:'check',o:['別途診療情報提供書に記載'],h:'診療情報提供書を添付される場合はチェックしてください（下欄の記入は不要になります）',skip:1},
+  {k:'course',l:'経過',ty:'ta',rw:4,r:1,alt:'coursealt'},
+  {k:'prog',l:'予後',ty:'ta',rw:2,ph:'例：月単位、週単位など'},
+  {k:'rx',l:'投薬内容',ty:'ta',rw:4},
+  {k:'proc',l:'現在の医療処置',ty:'check',o:['なし','在宅酸素','胃瘻・経管栄養','中心静脈栄養','尿道カテーテル','褥瘡処置','ストーマ','気管切開','喀痰吸引','インスリン注射','その他'],h:'※ 人工呼吸管理、腹水・胸水ドレナージ、輸血、持続皮下注射などの医療処置は当院では対応できません。これらが必要な場合は訪問診療をお断りさせていただく場合があります。'},
+  {k:'proc2',l:'医療処置の詳細・その他',ty:'ta',rw:2},
+  {k:'expl',l:'本人・家族への病状説明・告知内容',ty:'ta',rw:3,r:1},
+  {k:'und',l:'理解度',ty:'ta',rw:2,ph:'本人：　　家族：'}]},
+ {id:'care',t:'介護情報',f:[
+  {k:'kaigo',l:'介護度',ty:'select',o:['未申請','申請中','要支援1','要支援2','要介護1','要介護2','要介護3','要介護4','要介護5']},
+  {k:'adl',l:'ADL',ty:'ta',rw:2,ph:'移動・食事・排泄・認知機能など'},
+  {k:'cm',l:'ケアマネジャー',ph:'事業所名・氏名・連絡先'},
+  {k:'vns',l:'訪問看護ステーション',ph:'事業所名・連絡先',h:'当院と従来より連携のあるステーションとの連携に限ります'},
+  {k:'svc',l:'利用サービス',ty:'ta',rw:2}]},
+ {id:'fam',t:'家族・家庭環境',f:[
+  {k:'kp',l:'キーパーソン',ph:'氏名・続柄・連絡先',r:1},
+  {k:'live',l:'同居家族',ph:'例：妻（80歳）と二人暮らし'},
+  {k:'issue',l:'自宅療養に関する問題点',ty:'ta',rw:3}]},
+ {id:'wish',t:'本人・家族の希望',f:[
+  {k:'nut',l:'口から食べられなくなった場合、人工栄養を希望されるか',ty:'radio',o:['希望する','希望しない','未定・未確認']},
+  {k:'worse',l:'症状悪化時の対応',ty:'radio',o:['できるだけ家に居たい','悪化時は入院','未定・未確認']},
+  {k:'eol',l:'最期をどこで迎えたいか',ty:'radio',o:['自宅','病院','ホスピス','未定・未確認']},
+  {k:'cpa',l:'心肺停止時の対応',ty:'radio',o:['DNAR','蘇生を希望','未定・未確認']},
+  {k:'wnote',l:'本人と家族で意向が異なる点・補足',ty:'ta',rw:2}]},
+ {id:'bk',t:'バックアップ環境',f:[
+  {k:'bkh',l:'緊急時の入院受け入れ先',ph:'医療機関名'},
+  {k:'bks',l:'受け入れ体制',ty:'ta',rw:2,ph:'例：貴院にて24時間受け入れ可、など'}]},
+ {id:'neg',t:'トラブルに関する情報',d:'患者さんの問題行動、院内でのトラブル、患者・ご家族・医療者間での見解の相違点など、否定的な情報も包み隠さずご記載ください。意図的な隠蔽は今後の病診連携の不信につながります。',f:[
+  {k:'negnone',l:'特記事項',ty:'check',o:['なし'],h:'該当する情報がない場合はチェックしてください（下欄の記入は不要になります）',skip:1},
+  {k:'negx',l:'情報の詳細',ty:'ta',rw:4,r:1,alt:'negnone',ph:'具体的にご記入ください'}]},
+ {id:'etc',t:'その他',f:[{k:'memo',l:'備考・添付資料',ty:'ta',rw:3}]}
+];
+const $=s=>document.querySelector(s),F=$('#f');
+document.querySelectorAll('.seg button').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.m===MODE);
+ b.addEventListener('click',()=>{if(b.dataset.m===MODE)return;try{localStorage.setItem('kojima-houmon-mode',b.dataset.m)}catch(e){}location.reload()})});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ctl=f=>{const id='f_'+f.k,ph=f.ph?` placeholder="${esc(f.ph)}"`:'';
+ if(f.ty==='ta')return `<textarea id="${id}" name="${f.k}" rows="${f.rw||2}"${ph}></textarea>`;
+ if(f.ty==='select')return `<select id="${id}" name="${f.k}"><option value="">選択してください</option>${f.o.map(o=>`<option>${esc(o)}</option>`).join('')}</select>`;
+ if(f.ty==='radio'||f.ty==='check'){const t=f.ty==='radio'?'radio':'checkbox';
+  return `<div class="opts" role="group" aria-label="${esc(f.l)}">${f.o.map(o=>`<label><input type="${t}" name="${f.k}" value="${esc(o)}">${esc(o)}</label>`).join('')}</div>`}
+ return `<input id="${id}" name="${f.k}" type="${f.ty||'text'}"${ph}>`};
+F.innerHTML=S.map(s=>`<section id="${s.id}"><h2>${esc(s.t)}</h2>${s.d?`<p class="desc">${esc(s.d)}</p>`:''}${s.f.map(f=>{
+ const multi=f.ty==='radio'||f.ty==='check',cl=f.r?' class="req"':'';
+ const lab=multi?`<div class="lab"><span${cl}>${esc(f.l)}</span></div>`:`<label for="f_${f.k}"><span${cl}>${esc(f.l)}</span></label>`;
+ let extra='';
+  if(f.k==='area')extra=`<div class="warn" id="w_area">訪問範囲外の地区です。原則としてお受けできませんので、事前にご相談ください。</div>`;
+ return `<div class="row">${lab}<div>${ctl(f)}${f.h?`<div class="hint${f.k==='proc'?' ng':''}">${esc(f.h)}</div>`:''}${extra}</div></div>`}).join('')}</section>`).join('');
+$('#nav').innerHTML=S.map(s=>`<a href="#${s.id}">${esc(s.t)}</a>`).join('');
+
+const ALL=S.flatMap(s=>s.f);
+const val=f=>{if(f.ty==='radio'){const c=F.querySelector(`input[name="${f.k}"]:checked`);return c?c.value:''}
+ if(f.ty==='check')return [...F.querySelectorAll(`input[name="${f.k}"]:checked`)].map(c=>c.value).join('、');
+ return F.elements[f.k].value.trim()};
+const altv=f=>f.alt?val(ALL.find(a=>a.k===f.alt)):'';
+const ok=f=>!!val(f)||(f.alt&&!!val(ALL.find(a=>a.k===f.alt)));
+const fmtD=v=>{if(!v)return'';const[y,m,d]=v.split('-');return `${+y}年${+m}月${+d}日`};
+const shown=f=>f.ty==='date'?fmtD(val(f)):val(f);
+const getAll=()=>{const o={};ALL.forEach(f=>{o[f.k]=f.ty==='radio'||f.ty==='check'?val(f).split('、').filter(Boolean):F.elements[f.k].value});return o};
+const setAll=o=>{ALL.forEach(f=>{const v=o[f.k];if(v==null)return;
+ if(f.ty==='radio'||f.ty==='check')F.querySelectorAll(`input[name="${f.k}"]`).forEach(c=>c.checked=v.includes(c.value));else F.elements[f.k].value=v})};
+const KEY=MODE==='ini'?'kojima-houmon-irai-initial-v1':'kojima-houmon-irai-v1';
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(getAll()))}catch(e){}};
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const update=()=>{
+ $('#w_area').classList.toggle('on',F.elements.area.value==='上記以外');
+ ALL.filter(f=>f.alt).forEach(f=>{const a=altv(f),ta=F.elements[f.k];ta.disabled=!!a;ta.placeholder=a||f.ph||''});
+ const req=ALL.filter(f=>f.r),done=req.filter(ok).length;
+ $('#mt').textContent=`必須 ${done}/${req.length}`;$('#mb').style.width=(done/req.length*100)+'%'};
+F.addEventListener('input',e=>{
+ if(e.target.name==='dob'&&e.target.value){const b=new Date(e.target.value),n=new Date();let a=n.getFullYear()-b.getFullYear();
+  if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))a--;if(a>=0&&a<130)F.elements.age.value=a+'歳'}
+ update();save()});
+F.addEventListener('submit',e=>e.preventDefault());
+try{const s=localStorage.getItem(KEY);if(s)setAll(JSON.parse(s))}catch(e){}
+if(!F.elements.date.value)F.elements.date.value=today();
+update();
+
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),3200)};
+
+/* ---------- docx 生成（ZIP は無圧縮で自前作成） ---------- */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0};
+const zip=files=>{const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+ for(const[name,str]of files){const n=enc.encode(name),d=enc.encode(str),c=crc32(d);
+  const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);
+  h.setUint32(14,c,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,n.length,true);
+  parts.push(new Uint8Array(h.buffer),n,d);
+  const ch=new DataView(new ArrayBuffer(46));ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);
+  ch.setUint32(16,c,true);ch.setUint32(20,d.length,true);ch.setUint32(24,d.length,true);ch.setUint16(28,n.length,true);ch.setUint32(42,off,true);
+  cen.push(new Uint8Array(ch.buffer),n);off+=30+n.length+d.length}
+ const cs=cen.reduce((a,b)=>a+b.length,0),e=new DataView(new ArrayBuffer(22));
+ e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+ return new Blob([...parts,...cen,new Uint8Array(e.buffer)],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})};
+const x=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const run=(t,o={})=>String(t).split('\n').map((l,i)=>`${i?'<w:r><w:br/></w:r>':''}<w:r><w:rPr>${o.b?'<w:b/>':''}${o.sz?`<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>`:''}${o.c?`<w:color w:val="${o.c}"/>`:''}</w:rPr><w:t xml:space="preserve">${x(l)}</w:t></w:r>`).join('');
+const P=(t,o={})=>`<w:p><w:pPr>${o.kn?'<w:keepNext/>':''}<w:spacing w:before="${o.bf||0}" w:after="${o.af??60}"/>${o.jc?`<w:jc w:val="${o.jc}"/>`:''}</w:pPr>${run(t,o)}</w:p>`;
+const B='<w:tcBorders>'+['top','left','bottom','right'].map(s=>`<w:${s} w:val="single" w:sz="4" w:color="808080"/>`).join('')+'</w:tcBorders>';
+const cell=(w,inner,o={})=>`<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${o.span?`<w:gridSpan w:val="${o.span}"/>`:''}${B}${o.fill?`<w:shd w:val="clear" w:color="auto" w:fill="${o.fill}"/>`:''}<w:vAlign w:val="center"/></w:tcPr>${inner}</w:tc>`;
+const W1=2500,W2=7138;
+const table=s=>{let r=`<w:tr>${cell(W1+W2,P(s.t,{b:1,af:0,kn:1}),{span:2,fill:'D9D9D9'})}</w:tr>`;
+ if(s.d)r+=`<w:tr>${cell(W1+W2,P(s.d,{sz:18,af:0,kn:1}),{span:2})}</w:tr>`;
+ r+=s.f.filter(f=>!f.skip).map(f=>{let v=shown(f);if(altv(f))v=altv(f);if(f.k==='age'&&!v)v='';if(f.k==='proc'&&f.h)v=(v?v+'\n':'')+f.h;return `<w:tr><w:trPr><w:cantSplit/></w:trPr>${cell(W1,P(f.l,{b:1,sz:20,af:0}),{fill:'F2F2F2'})}${cell(W2,P(v||'',{af:0}))}</w:tr>`}).join('');
+ return `<w:tbl><w:tblPr><w:tblW w:w="${W1+W2}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="50" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="50" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="${W1}"/><w:gridCol w:w="${W2}"/></w:tblGrid>${r}</w:tbl>${P('',{af:80})}`};
+const NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+const buildDocx=()=>{const g=k=>shown(ALL.find(f=>f.k===k));
+ const body=P('訪問診療依頼に関する情報提供書',{b:1,sz:32,jc:'center',af:200})
+  +P(g('date')||'　　年　　月　　日',{jc:'right',af:120})
+  +P('小嶋診療所　小嶋 志之 医師宛て',{sz:24,af:120})
+  +P(`${g('inst')}　${g('dept')}`.trim(),{jc:'right',af:0})+P(`主治医　${g('doc')}`,{jc:'right',af:200})
+  +P('下記の患者様につきまして、訪問診療をご依頼申し上げます。情報を提供いたしますので、ご検討のほどよろしくお願い申し上げます。',{af:160})
+  +S.map(table).join('')
+  +P('※ 情報提供の上で訪問診療が可能と判断された場合も、まずご本人またはご家族の受診により、訪問診療の方針・体制・費用負担についてご了解いただいてから開始となります。',{sz:18,af:0});
+ const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+ const st=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${NS}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="游明朝" w:eastAsia="游明朝" w:hAnsi="游明朝" w:cs="游明朝"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="en-US" w:eastAsia="ja-JP"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="300" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`;
+ return zip([
+  ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>'],
+  ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'],
+  ['word/_rels/document.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+  ['word/document.xml',doc],['word/styles.xml',st]])};
+const asText=()=>['訪問診療依頼に関する情報提供書','小嶋診療所　小嶋 志之 医師宛て',''].concat(S.flatMap(s=>[`■ ${s.t}`,...s.f.filter(f=>!f.skip).map(f=>`${f.l}：${altv(f)||shown(f)}`),''])).join('\n');
+
+$('#dl').addEventListener('click',async()=>{
+ const miss=ALL.filter(f=>f.r&&!ok(f));
+ const blob=buildDocx(),nm=(val(ALL.find(f=>f.k==='name'))||'未記入').replace(/[\\/:*?"<>|\s]/g,'');
+ const fn=`訪問診療依頼_情報提供書_${nm.replace(/\./g,'')}_${today().replace(/-/g,'')}.docx`;
+ const done=()=>toast(miss.length?`作成しました（未入力の必須項目：${miss.length}件）`:'Word文書を作成しました');
+ const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ if(ios&&navigator.canShare){try{const file=new File([blob],fn,{type:blob.type});
+  if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'訪問診療依頼 情報提供書'});done()}
+   catch(e){toast(e&&e.name==='AbortError'?'キャンセルしました':'共有できませんでした')}return}}catch(e){}}
+ let dl=null;if(window.claude&&window.claude.use){try{dl=await window.claude.use('downloads')}catch(e){}}
+ if(!dl){try{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);done()}catch(e){toast('保存できませんでした。「コピー」をご利用ください。')}return}
+ try{await dl.save({filename:fn,data:blob});toast(miss.length?`保存しました（未入力の必須項目：${miss.length}件）`:'Word文書を保存しました')}
+ catch(e){toast(e&&e.code==='declined'?'保存を取り消しました':'保存できませんでした。もう一度お試しください。')}});
+$('#cp').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(asText());toast('入力内容をコピーしました')}catch(e){toast('コピーできませんでした')}});
+let armed=0;
+$('#clr').addEventListener('click',e=>{if(!armed){armed=1;e.target.textContent='もう一度で消去';setTimeout(()=>{armed=0;e.target.textContent='クリア'},3000);return}
+ armed=0;e.target.textContent='クリア';F.reset();F.elements.date.value=today();try{localStorage.removeItem(KEY)}catch(_){}update();toast('入力をクリアしました')});
+if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+}
+</script>
+</body>
+</html>
